@@ -25,30 +25,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger with JWT
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerDocument(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Massage Booking API", Version = "v1" });
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.Title = "Massage Booking API";
+    c.Version = "v1";
+    c.AddSecurity("Bearer", new NSwag.OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+        Type = NSwag.OpenApiSecuritySchemeType.ApiKey
     });
 });
 
@@ -111,7 +97,7 @@ builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UsePostgresStorage(builder.Configuration.GetConnectionString("Hangfire")));
+    .UsePostgreSqlStorage(builder.Configuration.GetConnectionString("Hangfire")));
 
 builder.Services.AddHangfireServer();
 
@@ -126,8 +112,8 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseOpenApi();
+    app.UseSwaggerUi();
 }
 
 app.UseHttpsRedirection();

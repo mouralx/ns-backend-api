@@ -95,7 +95,7 @@ public class NotificationService : INotificationService
 
             try
             {
-                await _pushNotificationService.SendAsync(
+                await _pushNotificationService.SendPushAsync(
                     therapist.PushToken,
                     "New Booking",
                     $"New {serviceName} appointment on {scheduledAt:MMM dd, HH:mm}");
@@ -126,7 +126,7 @@ public class NotificationService : INotificationService
 
             try
             {
-                await _pushNotificationService.SendAsync(
+                await _pushNotificationService.SendPushAsync(
                     client.PushToken,
                     "Booking Confirmed",
                     $"Your {serviceName} is scheduled for {scheduledAt:MMM dd, HH:mm}");
@@ -159,7 +159,7 @@ public class NotificationService : INotificationService
 
             try
             {
-                await _pushNotificationService.SendAsync(
+                await _pushNotificationService.SendPushAsync(
                     therapist.PushToken,
                     "Appointment Cancelled",
                     "An appointment has been cancelled");
@@ -192,7 +192,7 @@ public class NotificationService : INotificationService
 
             try
             {
-                await _pushNotificationService.SendAsync(
+                await _pushNotificationService.SendPushAsync(
                     client.PushToken,
                     "Appointment Confirmed",
                     "Your appointment has been confirmed");
@@ -225,7 +225,7 @@ public class NotificationService : INotificationService
 
             try
             {
-                await _pushNotificationService.SendAsync(
+                await _pushNotificationService.SendPushAsync(
                     user.PushToken,
                     "Appointment Reminder",
                     $"Reminder: {serviceName} at {scheduledAt:HH:mm} tomorrow");
