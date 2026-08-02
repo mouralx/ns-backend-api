@@ -103,8 +103,8 @@ public class AppointmentService : IAppointmentService
             ServiceTypeId = request.ServiceTypeId,
             ScheduledAt = request.ScheduledAt,
             DurationMin = serviceType.DurationMin,
-            Status = AppointmentStatus.Pending,
-            ConfirmationStatus = ConfirmationStatus.Unconfirmed,
+            Status = AppointmentStatus.Scheduled,
+            ConfirmationStatus = ConfirmationStatus.Pending,
             Notes = request.Notes,
             IsWalkin = false
         };
@@ -286,7 +286,7 @@ public class AppointmentService : IAppointmentService
         }
 
         appointments = appointments
-            .Where(a => a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
+            .Where(a => a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed)
             .OrderBy(a => a.ScheduledAt)
             .Take(limit);
 

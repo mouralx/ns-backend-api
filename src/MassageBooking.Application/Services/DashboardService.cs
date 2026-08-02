@@ -45,7 +45,7 @@ public class DashboardService : IDashboardService
             totalClients,
             totalTherapists,
             totalServices,
-            todayAppointments.Count(a => a.Status == AppointmentStatus.Pending),
+            todayAppointments.Count(a => a.Status == AppointmentStatus.Scheduled),
             todayAppointments.Count(a => a.Status == AppointmentStatus.Confirmed));
 
         return Result<DashboardStatsDto>.Success(stats);
@@ -89,7 +89,7 @@ public class DashboardService : IDashboardService
         var appointments = await _appointmentRepository.GetByDateRangeAsync(now, futureDate);
 
         var dtos = appointments
-            .Where(a => a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
+            .Where(a => a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed)
             .OrderBy(a => a.ScheduledAt)
             .Take(limit)
             .Select(a => new AppointmentDto(
@@ -124,7 +124,7 @@ public class DashboardService : IDashboardService
 
         var atRisk = appointments
             .Where(a =>
-                a.Status == AppointmentStatus.Pending &&
+                a.Status == AppointmentStatus.Scheduled &&
                 a.ConfirmationStatus != ConfirmationStatus.Confirmed &&
                 a.ScheduledAt <= fourHoursFromNow)
             .OrderBy(a => a.ScheduledAt)

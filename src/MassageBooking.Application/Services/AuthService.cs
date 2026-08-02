@@ -109,4 +109,15 @@ public class AuthService : IAuthService
             user.IsActive,
             user.CreatedAt);
     }
+
+    public async Task<Result<UserDto>> GetByIdAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return Result<UserDto>.Failure("User not found");
+        }
+
+        return Result<UserDto>.Success(MapToDto(user));
+    }
 }

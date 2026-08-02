@@ -31,7 +31,7 @@ public class NotificationJob
         var appointments = await appointmentRepository.GetByDateRangeAsync(tomorrow, dayAfterTomorrow);
 
         foreach (var appointment in appointments.Where(a =>
-            a.Status == AppointmentStatus.Pending &&
+            a.Status == AppointmentStatus.Scheduled &&
             a.ConfirmationStatus != ConfirmationStatus.Confirmed))
         {
             var client = await userRepository.GetByIdAsync(appointment.ClientId);
@@ -96,7 +96,7 @@ public class NotificationJob
         var appointments = await appointmentRepository.GetByDateRangeAsync(oneHourAgo, now);
 
         foreach (var appointment in appointments.Where(a =>
-            a.Status == AppointmentStatus.Pending &&
+            a.Status == AppointmentStatus.Scheduled &&
             a.ScheduledAt.AddMinutes(a.DurationMin) < now))
         {
             appointment.Status = AppointmentStatus.NoShow;

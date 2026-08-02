@@ -9,8 +9,8 @@ public class Appointment : BaseEntity
     public Guid ServiceTypeId { get; set; }
     public DateTime ScheduledAt { get; set; }
     public int DurationMin { get; set; }
-    public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
-    public ConfirmationStatus ConfirmationStatus { get; set; } = ConfirmationStatus.Unconfirmed;
+    public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
+    public ConfirmationStatus ConfirmationStatus { get; set; } = ConfirmationStatus.Pending;
     public DateTime? ConfirmedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public string? CancellationReason { get; set; }

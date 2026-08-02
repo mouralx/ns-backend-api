@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MassageBooking.Application.DTOs;
 using MassageBooking.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MassageBooking.Api.Controllers;
@@ -14,6 +15,25 @@ public class AuthController : ControllerBase
     public AuthController(IAuthService authService)
     {
         _authService = authService;
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { error = "Invalid token" });
+        }
+
+        var result = await _authService.GetByIdAsync(userId);
+        if (!result.IsSuccess)
+        {
+            return NotFound(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
     }
 
     [HttpPost("register")]

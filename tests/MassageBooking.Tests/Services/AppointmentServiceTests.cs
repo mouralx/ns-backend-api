@@ -157,7 +157,7 @@ public class AppointmentServiceTests
         // Arrange
         var appointmentId = Guid.NewGuid();
         var appointment = CreateTestAppointment(appointmentId);
-        appointment.Status = AppointmentStatus.Pending;
+        appointment.Status = AppointmentStatus.Scheduled;
 
         _appointmentRepoMock.Setup(x => x.GetByIdAsync(appointmentId))
             .ReturnsAsync(appointment);
@@ -186,8 +186,8 @@ public class AppointmentServiceTests
             ServiceTypeId = Guid.NewGuid(),
             ScheduledAt = DateTime.UtcNow.AddHours(8),
             DurationMin = 60,
-            Status = AppointmentStatus.Pending,
-            ConfirmationStatus = ConfirmationStatus.Unconfirmed,
+            Status = AppointmentStatus.Scheduled,
+            ConfirmationStatus = ConfirmationStatus.Pending,
             Notes = null,
             IsWalkin = false,
             CreatedAt = DateTime.UtcNow

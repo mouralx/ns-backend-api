@@ -33,9 +33,9 @@ public class DashboardServiceTests
         var today = DateTime.UtcNow.Date;
         var appointments = new List<Appointment>
         {
-            new() { ScheduledAt = today.AddHours(10), Status = AppointmentStatus.Pending },
+            new() { ScheduledAt = today.AddHours(10), Status = AppointmentStatus.Scheduled },
             new() { ScheduledAt = today.AddHours(14), Status = AppointmentStatus.Confirmed },
-            new() { ScheduledAt = today.AddDays(1), Status = AppointmentStatus.Pending }
+            new() { ScheduledAt = today.AddDays(1), Status = AppointmentStatus.Scheduled }
         };
         var users = new List<User>
         {
@@ -75,8 +75,8 @@ public class DashboardServiceTests
             {
                 Id = Guid.NewGuid(),
                 ScheduledAt = now.AddHours(2),
-                Status = AppointmentStatus.Pending,
-                ConfirmationStatus = ConfirmationStatus.Unconfirmed,
+                Status = AppointmentStatus.Scheduled,
+                ConfirmationStatus = ConfirmationStatus.Pending,
                 DurationMin = 60,
                 CreatedAt = now
             },
@@ -84,7 +84,7 @@ public class DashboardServiceTests
             {
                 Id = Guid.NewGuid(),
                 ScheduledAt = now.AddHours(8),
-                Status = AppointmentStatus.Pending,
+                Status = AppointmentStatus.Scheduled,
                 ConfirmationStatus = ConfirmationStatus.Confirmed,
                 DurationMin = 60,
                 CreatedAt = now
