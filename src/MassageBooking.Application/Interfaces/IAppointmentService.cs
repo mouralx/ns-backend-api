@@ -10,7 +10,9 @@ public interface IAppointmentService
     Task<Result<IEnumerable<AppointmentDto>>> GetByClientAsync(Guid clientId);
     Task<Result<IEnumerable<AppointmentDto>>> GetByTherapistAsync(Guid therapistId);
     Task<Result<AppointmentDto>> BookAsync(BookAppointmentRequest request, Guid clientId);
+    Task<Result<AppointmentDto>> UpdateAsync(Guid id, UpdateAppointmentRequest request);
     Task<Result<AppointmentDto>> CancelAsync(Guid id, string? reason = null);
     Task<Result<AppointmentDto>> ConfirmAsync(Guid id);
     Task<Result<SlotsResponse>> GetAvailableSlotsAsync(Guid therapistId, Guid serviceTypeId, DateTime date);
+    Task<Result<IEnumerable<AppointmentDto>>> GetUpcomingAsync(Guid? therapistId = null, int limit = 10);
 }

@@ -9,16 +9,11 @@ public record UserDto(
     string Name,
     UserRole Role,
     bool IsActive,
-    DateTime CreatedAt);
+    DateTime CreatedAt
+);
 
-public record CreateUserRequest(
-    string Email,
-    string Phone,
-    string Name,
-    string Password,
-    UserRole Role);
-
-public record UpdateUserRequest(
-    string? Phone,
-    string? Name,
-    bool? IsActive);
+public record AuthTokens(
+    string AccessToken,
+    string RefreshToken,
+    DateTime ExpiresAt
+);

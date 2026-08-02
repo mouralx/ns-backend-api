@@ -10,90 +10,101 @@ public class ClientService : IClientService
 {
     private readonly IUserRepository _userRepository;
     private readonly IAppointmentRepository _appointmentRepository;
-    private readonly IServiceTypeRepository _serviceTypeRepository;
 
-    public ClientService(
-        IUserRepository userRepository,
-        IAppointmentRepository appointmentRepository,
-        IServiceTypeRepository serviceTypeRepository)
+    public ClientService(IUserRepository userRepository, IAppointmentRepository appointmentRepository)
     {
         _userRepository = userRepository;
         _appointmentRepository = appointmentRepository;
-        _serviceTypeRepository = serviceTypeRepository;
     }
 
-    public async Task<Result<IEnumerable<ClientDto>>> ListAsync()
+    public async Task<Result<IEnumerable<ClientDto>>> GetAllAsync()
     {
         var users = await _userRepository.GetAllAsync();
         var clients = users.Where(u => u.Role == UserRole.Client);
 
-        var dtos = clients.Select(c => new ClientDto(
-            c.Id,
-            c.Name,
-            c.Email,
-            c.Phone,
-            c.CreatedAt)).ToList();
+        var dtos = clients.Select(u => new ClientDto(
+            u.Id,
+            u.Email,
+            u.Phone,
+            u.Name,
+            u.IsActive,
+            u.CreatedAt)).ToList();
 
         return Result<IEnumerable<ClientDto>>.Success(dtos);
     }
 
-    public async Task<Result<ClientDetailDto>> GetDetailAsync(Guid clientId)
+    public async Task<Result<ClientDto>> GetByIdAsync(Guid id)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null || user.Role != UserRole.Client)
+        {
+            return Result<ClientDto>.Failure("Client not found");
+        }
+
+        var dto = new ClientDto(
+            user.Id,
+            user.Email,
+            user.Phone,
+            user.Name,
+            user.IsActive,
+            user.CreatedAt);
+
+        return Result<ClientDto>.Success(dto);
+    }
+
+    public async Task<Result<ClientDto>> UpdateAsync(Guid id, UpdateClientRequest request)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null || user.Role != UserRole.Client)
+        {
+            return Result<ClientDto>.Failure("Client not found");
+        }
+
+        if (request.Phone != null) user.Phone = request.Phone;
+        if (request.Name != null) user.Name = request.Name;
+        if (request.IsActive.HasValue) user.IsActive = request.IsActive.Value;
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _userRepository.UpdateAsync(user);
+
+        var dto = new ClientDto(
+            user.Id,
+            user.Email,
+            user.Phone,
+            user.Name,
+            user.IsActive,
+            user.CreatedAt);
+
+        return Result<ClientDto>.Success(dto);
+    }
+
+    public async Task<Result<IEnumerable<AppointmentDto>>> GetAppointmentHistoryAsync(Guid clientId)
     {
         var client = await _userRepository.GetByIdAsync(clientId);
         if (client == null || client.Role != UserRole.Client)
         {
-            return Result<ClientDetailDto>.Failure("Client not found");
+            return Result<IEnumerable<AppointmentDto>>.Failure("Client not found");
         }
 
         var appointments = await _appointmentRepository.GetByClientAsync(clientId);
-        var totalAppointments = appointments.Count();
-        var lastVisit = appointments
-            .Where(a => a.Status == AppointmentStatus.Completed)
-            .OrderByDescending(a => a.ScheduledAt)
-            .FirstOrDefault()?.ScheduledAt;
-
-        var dto = new ClientDetailDto(
-            client.Id,
-            client.Name,
-            client.Email,
-            client.Phone,
-            client.CreatedAt,
-            totalAppointments,
-            lastVisit);
-
-        return Result<ClientDetailDto>.Success(dto);
-    }
-
-    public async Task<Result<IEnumerable<AppointmentDto>>> GetAppointmentsAsync(Guid clientId)
-    {
-        var appointments = await _appointmentRepository.GetByClientAsync(clientId);
-
-        var dtos = new List<AppointmentDto>();
-        foreach (var appointment in appointments)
-        {
-            var therapist = await _userRepository.GetByIdAsync(appointment.TherapistId);
-            var serviceType = await _serviceTypeRepository.GetByIdAsync(appointment.ServiceTypeId);
-            var client = await _userRepository.GetByIdAsync(appointment.ClientId);
-
-            dtos.Add(new AppointmentDto(
-                appointment.Id,
-                appointment.ClientId,
-                client != null ? new UserDto(client.Id, client.Email, client.Phone, client.Name, client.Role, client.IsActive, client.CreatedAt) : null!,
-                appointment.TherapistId,
-                therapist != null ? new UserDto(therapist.Id, therapist.Email, therapist.Phone, therapist.Name, therapist.Role, therapist.IsActive, therapist.CreatedAt) : null!,
-                appointment.ServiceTypeId,
-                serviceType != null ? new ServiceTypeDto(serviceType.Id, serviceType.Name, serviceType.DurationMin, serviceType.Description, serviceType.IsActive) : null!,
-                appointment.ScheduledAt,
-                appointment.DurationMin,
-                appointment.Status,
-                appointment.ConfirmationStatus,
-                appointment.ConfirmedAt,
-                appointment.CancelledAt,
-                appointment.CancellationReason,
-                appointment.Notes,
-                appointment.IsWalkin,
-                appointment.CreatedAt));
-        }
+        var dtos = appointments.Select(a => new AppointmentDto(
+            a.Id,
+            a.ClientId,
+            null!,
+            a.TherapistId,
+            null!,
+            a.ServiceTypeId,
+            null!,
+            a.ScheduledAt,
+            a.DurationMin,
+            a.Status,
+            a.ConfirmationStatus,
+            a.ConfirmedAt,
+            a.CancelledAt,
+            a.CancellationReason,
+            a.Notes,
+            a.IsWalkin,
+            a.CreatedAt)).ToList();
 
         return Result<IEnumerable<AppointmentDto>>.Success(dtos);
     }

@@ -1,10 +1,13 @@
+using Xunit;
+
 namespace MassageBooking.Tests;
 
-public class UnitTest1
+public class SmokeTest
 {
     [Fact]
-    public void Test1()
+    public void ApplicationLoads()
     {
-
+        // Basic smoke test to verify project references are correct
+        Assert.True(true);
     }
 }

@@ -6,5 +6,6 @@ public enum ConfirmationStatus
     PendingConfirmation = 1,
     Confirmed = 2,
     Expired = 3,
-    Rejected = 4
+    AtRisk = 4,
+    Rejected = 5
 }

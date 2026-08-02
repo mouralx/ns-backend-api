@@ -1,5 +1,7 @@
 using System.Text;
 using Hangfire;
+using Hangfire.PostgreSql;
+using MassageBooking.Api.Jobs;
 using MassageBooking.Infrastructure;
 using MassageBooking.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,7 +25,32 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger with JWT
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Massage Booking API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // CORS
 builder.Services.AddCors(options =>
@@ -84,8 +111,7 @@ builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UseStorage(new Hangfire.PostgreSql.PostgreSqlStorage(
-        builder.Configuration.GetConnectionString("DefaultConnection"))));
+    .UsePostgresStorage(builder.Configuration.GetConnectionString("Hangfire")));
 
 builder.Services.AddHangfireServer();
 
@@ -125,6 +151,23 @@ if (app.Environment.IsDevelopment())
 {
     app.MapHangfireDashboard("/hangfire");
 }
+
+// Register Hangfire recurring jobs
+var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobs.AddOrUpdate<NotificationJob>(
+    "send-24h-confirmations",
+    job => job.Send24HourConfirmationsAsync(),
+    Cron.Daily);
+
+recurringJobs.AddOrUpdate<NotificationJob>(
+    "send-2h-reminders",
+    job => job.Send2HourRemindersAsync(),
+    "0 */4 * * *");
+
+recurringJobs.AddOrUpdate<NotificationJob>(
+    "detect-no-shows",
+    job => job.DetectNoShowsAsync(),
+    Cron.Hourly);
 
 // Apply migrations on startup
 using (var scope = app.Services.CreateScope())

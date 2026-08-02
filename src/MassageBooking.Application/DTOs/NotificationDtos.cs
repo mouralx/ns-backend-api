@@ -9,8 +9,10 @@ public record NotificationDto(
     NotificationStatus Status,
     DateTime? SentAt,
     DateTime? ReadAt,
-    Guid AppointmentId,
-    string Message);
+    Guid? AppointmentId,
+    string ErrorMessage
+);
 
 public record MarkReadRequest(
-    List<Guid> NotificationIds);
+    IEnumerable<Guid> NotificationIds
+);

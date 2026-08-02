@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace MassageBooking.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-[Authorize(Policy = "TherapistOnly")]
+[Route("api/clients")]
+[Authorize]
 public class ClientsController : ControllerBase
 {
     private readonly IClientService _clientService;
@@ -18,38 +18,34 @@ public class ClientsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List()
+    public async Task<IActionResult> GetAll()
     {
-        var result = await _clientService.ListAsync();
-        if (!result.IsSuccess)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-
+        var result = await _clientService.GetAllAsync();
+        if (!result.IsSuccess) return BadRequest(result.Error);
         return Ok(result.Value);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetDetail(Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _clientService.GetDetailAsync(id);
-        if (!result.IsSuccess)
-        {
-            return NotFound(new { error = result.Error });
-        }
+        var result = await _clientService.GetByIdAsync(id);
+        if (!result.IsSuccess) return NotFound(result.Error);
+        return Ok(result.Value);
+    }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientRequest request)
+    {
+        var result = await _clientService.UpdateAsync(id, request);
+        if (!result.IsSuccess) return BadRequest(result.Error);
         return Ok(result.Value);
     }
 
     [HttpGet("{id}/appointments")]
-    public async Task<IActionResult> GetAppointments(Guid id)
+    public async Task<IActionResult> GetAppointmentHistory(Guid id)
     {
-        var result = await _clientService.GetAppointmentsAsync(id);
-        if (!result.IsSuccess)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-
+        var result = await _clientService.GetAppointmentHistoryAsync(id);
+        if (!result.IsSuccess) return BadRequest(result.Error);
         return Ok(result.Value);
     }
 }

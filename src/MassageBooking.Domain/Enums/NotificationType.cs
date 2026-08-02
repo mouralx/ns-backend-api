@@ -2,10 +2,12 @@ namespace MassageBooking.Domain.Enums;
 
 public enum NotificationType
 {
-    BookingConfirmation = 0,
-    BookingReminder = 1,
-    BookingCancellation = 2,
-    AppointmentUpdate = 3,
-    ConfirmationRequest = 4,
-    General = 5
+    BookingCreated = 0,
+    BookingConfirmation = 1,
+    AppointmentReminder = 2,
+    AppointmentCancelled = 3,
+    AppointmentConfirmed = 4,
+    AppointmentUpdate = 5,
+    ConfirmationRequest = 6,
+    General = 7
 }

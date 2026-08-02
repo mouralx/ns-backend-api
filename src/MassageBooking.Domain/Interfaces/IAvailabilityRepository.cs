@@ -4,12 +4,19 @@ namespace MassageBooking.Domain.Interfaces;
 
 public interface IAvailabilityRepository
 {
-    Task<IEnumerable<AvailabilityRule>> GetRulesAsync(Guid therapistId, int dayOfWeek);
+    // Rules
     Task<IEnumerable<AvailabilityRule>> GetAllRulesAsync();
+    Task<IEnumerable<AvailabilityRule>> GetRulesAsync(Guid therapistId, int dayOfWeek);
+    Task<AvailabilityRule?> GetRuleByIdAsync(Guid id);
     Task<AvailabilityRule> AddRuleAsync(AvailabilityRule rule);
-    Task RemoveRuleAsync(Guid ruleId);
+    Task UpdateRuleAsync(AvailabilityRule rule);
+    Task RemoveRuleAsync(Guid id);
+
+    // Blocks
     Task<IEnumerable<AvailabilityBlock>> GetBlocksAsync(Guid therapistId);
     Task<IEnumerable<AvailabilityBlock>> GetBlocksForDateAsync(Guid therapistId, DateTime date);
+    Task<AvailabilityBlock?> GetBlockByIdAsync(Guid id);
     Task<AvailabilityBlock> AddBlockAsync(AvailabilityBlock block);
-    Task RemoveBlockAsync(Guid blockId);
+    Task UpdateBlockAsync(AvailabilityBlock block);
+    Task RemoveBlockAsync(Guid id);
 }

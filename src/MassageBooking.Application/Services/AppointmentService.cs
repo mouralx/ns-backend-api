@@ -13,17 +13,20 @@ public class AppointmentService : IAppointmentService
     private readonly IUserRepository _userRepository;
     private readonly IServiceTypeRepository _serviceTypeRepository;
     private readonly IAvailabilityRepository _availabilityRepository;
+    private readonly INotificationService _notificationService;
 
     public AppointmentService(
         IAppointmentRepository appointmentRepository,
         IUserRepository userRepository,
         IServiceTypeRepository serviceTypeRepository,
-        IAvailabilityRepository availabilityRepository)
+        IAvailabilityRepository availabilityRepository,
+        INotificationService notificationService)
     {
         _appointmentRepository = appointmentRepository;
         _userRepository = userRepository;
         _serviceTypeRepository = serviceTypeRepository;
         _availabilityRepository = availabilityRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<AppointmentDto>> GetByIdAsync(Guid id)
@@ -72,21 +75,18 @@ public class AppointmentService : IAppointmentService
 
     public async Task<Result<AppointmentDto>> BookAsync(BookAppointmentRequest request, Guid clientId)
     {
-        // Validate therapist exists
         var therapist = await _userRepository.GetByIdAsync(request.TherapistId);
         if (therapist == null || therapist.Role != UserRole.Therapist)
         {
             return Result<AppointmentDto>.Failure("Invalid therapist");
         }
 
-        // Validate service type exists
         var serviceType = await _serviceTypeRepository.GetByIdAsync(request.ServiceTypeId);
         if (serviceType == null || !serviceType.IsActive)
         {
             return Result<AppointmentDto>.Failure("Invalid service type");
         }
 
-        // Check slot availability
         var endAt = request.ScheduledAt.AddMinutes(serviceType.DurationMin);
         var conflicts = await _appointmentRepository.GetConflictingAsync(
             request.TherapistId, request.ScheduledAt, endAt);
@@ -111,9 +111,58 @@ public class AppointmentService : IAppointmentService
 
         await _appointmentRepository.AddAsync(appointment);
 
-        // Reload with navigation properties
         var saved = await _appointmentRepository.GetByIdAsync(appointment.Id);
-        return Result<AppointmentDto>.Success(await MapToDtoAsync(saved!));
+        var dto = await MapToDtoAsync(saved!);
+
+        // Send notification to therapist about new booking
+        await _notificationService.CreateBookingNotificationAsync(
+            appointment.Id, appointment.ClientId, appointment.TherapistId, serviceType.Name, appointment.ScheduledAt);
+
+        return Result<AppointmentDto>.Success(dto);
+    }
+
+    public async Task<Result<AppointmentDto>> UpdateAsync(Guid id, UpdateAppointmentRequest request)
+    {
+        var appointment = await _appointmentRepository.GetByIdAsync(id);
+        if (appointment == null)
+        {
+            return Result<AppointmentDto>.Failure("Appointment not found");
+        }
+
+        if (appointment.Status == AppointmentStatus.Cancelled ||
+            appointment.Status == AppointmentStatus.Completed)
+        {
+            return Result<AppointmentDto>.Failure("Cannot update cancelled or completed appointment");
+        }
+
+        if (request.ScheduledAt.HasValue)
+        {
+            var serviceType = await _serviceTypeRepository.GetByIdAsync(appointment.ServiceTypeId);
+            var endAt = request.ScheduledAt.Value.AddMinutes(serviceType?.DurationMin ?? appointment.DurationMin);
+            var conflicts = await _appointmentRepository.GetConflictingAsync(
+                appointment.TherapistId, request.ScheduledAt.Value, endAt);
+
+            // Exclude current appointment from conflict check
+            conflicts = conflicts.Where(c => c.Id != id);
+
+            if (conflicts.Any())
+            {
+                return Result<AppointmentDto>.Failure("New time slot is not available");
+            }
+
+            appointment.ScheduledAt = request.ScheduledAt.Value;
+            appointment.DurationMin = serviceType?.DurationMin ?? appointment.DurationMin;
+        }
+
+        if (request.Notes != null)
+        {
+            appointment.Notes = request.Notes;
+        }
+
+        appointment.UpdatedAt = DateTime.UtcNow;
+        await _appointmentRepository.UpdateAsync(appointment);
+
+        return Result<AppointmentDto>.Success(await MapToDtoAsync(appointment));
     }
 
     public async Task<Result<AppointmentDto>> CancelAsync(Guid id, string? reason = null)
@@ -124,7 +173,6 @@ public class AppointmentService : IAppointmentService
             return Result<AppointmentDto>.Failure("Appointment not found");
         }
 
-        // Check 4-hour cancellation rule for clients
         var hoursUntil = (appointment.ScheduledAt - DateTime.UtcNow).TotalHours;
         if (hoursUntil < 4)
         {
@@ -137,6 +185,10 @@ public class AppointmentService : IAppointmentService
         appointment.UpdatedAt = DateTime.UtcNow;
 
         await _appointmentRepository.UpdateAsync(appointment);
+
+        // Send cancellation notification
+        await _notificationService.CreateCancellationNotificationAsync(
+            appointment.Id, appointment.ClientId, appointment.TherapistId);
 
         return Result<AppointmentDto>.Success(await MapToDtoAsync(appointment));
     }
@@ -156,6 +208,10 @@ public class AppointmentService : IAppointmentService
 
         await _appointmentRepository.UpdateAsync(appointment);
 
+        // Send confirmation notification to therapist
+        await _notificationService.CreateConfirmedNotificationAsync(
+            appointment.Id, appointment.ClientId, appointment.TherapistId);
+
         return Result<AppointmentDto>.Success(await MapToDtoAsync(appointment));
     }
 
@@ -168,7 +224,6 @@ public class AppointmentService : IAppointmentService
             return Result<SlotsResponse>.Failure("Service type not found");
         }
 
-        // Get availability rules for the day
         var dayOfWeek = (int)date.DayOfWeek;
         var rules = await _availabilityRepository.GetRulesAsync(therapistId, dayOfWeek);
 
@@ -178,10 +233,8 @@ public class AppointmentService : IAppointmentService
                 date.Date, therapistId, serviceTypeId, serviceType.DurationMin, new List<SlotDto>()));
         }
 
-        // Get blocks for the day
         var blocks = await _availabilityRepository.GetBlocksForDateAsync(therapistId, date);
 
-        // Get existing appointments for the day
         var dayStart = date.Date;
         var dayEnd = date.Date.AddDays(1);
         var appointments = await _appointmentRepository.GetByDateRangeAsync(dayStart, dayEnd);
@@ -189,7 +242,6 @@ public class AppointmentService : IAppointmentService
             a.TherapistId == therapistId &&
             a.Status != AppointmentStatus.Cancelled);
 
-        // Calculate available slots
         var slots = new List<SlotDto>();
 
         foreach (var rule in rules.Where(r => r.IsActive))
@@ -201,11 +253,9 @@ public class AppointmentService : IAppointmentService
             {
                 var slotEnd = currentTime.AddMinutes(serviceType.DurationMin);
 
-                // Check if slot conflicts with blocks
                 var blockedByBlock = blocks.Any(b =>
                     currentTime < b.EndAt && slotEnd > b.StartAt);
 
-                // Check if slot conflicts with appointments
                 var blockedByAppointment = therapistAppointments.Any(a =>
                     currentTime < a.ScheduledAt.AddMinutes(a.DurationMin) &&
                     slotEnd > a.ScheduledAt);
@@ -215,12 +265,37 @@ public class AppointmentService : IAppointmentService
                     slots.Add(new SlotDto(currentTime, slotEnd));
                 }
 
-                currentTime = currentTime.AddMinutes(30); // 30-minute intervals
+                currentTime = currentTime.AddMinutes(30);
             }
         }
 
         return Result<SlotsResponse>.Success(new SlotsResponse(
             date.Date, therapistId, serviceTypeId, serviceType.DurationMin, slots));
+    }
+
+    public async Task<Result<IEnumerable<AppointmentDto>>> GetUpcomingAsync(Guid? therapistId = null, int limit = 10)
+    {
+        var now = DateTime.UtcNow;
+        var futureDate = now.AddDays(30);
+
+        var appointments = await _appointmentRepository.GetByDateRangeAsync(now, futureDate);
+
+        if (therapistId.HasValue)
+        {
+            appointments = appointments.Where(a => a.TherapistId == therapistId.Value);
+        }
+
+        appointments = appointments
+            .Where(a => a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
+            .OrderBy(a => a.ScheduledAt)
+            .Take(limit);
+
+        var dtos = new List<AppointmentDto>();
+        foreach (var appointment in appointments)
+        {
+            dtos.Add(await MapToDtoAsync(appointment));
+        }
+        return Result<IEnumerable<AppointmentDto>>.Success(dtos);
     }
 
     private async Task<AppointmentDto> MapToDtoAsync(Appointment appointment)

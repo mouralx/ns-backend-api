@@ -19,26 +19,30 @@ public record AppointmentDto(
     string? CancellationReason,
     string? Notes,
     bool IsWalkin,
-    DateTime CreatedAt);
+    DateTime CreatedAt
+);
 
 public record BookAppointmentRequest(
-    Guid ServiceTypeId,
     Guid TherapistId,
+    Guid ServiceTypeId,
     DateTime ScheduledAt,
-    string? Notes = null);
+    string? Notes
+);
 
 public record UpdateAppointmentRequest(
     DateTime? ScheduledAt,
-    int? DurationMin,
-    string? Notes);
+    string? Notes
+);
 
 public record SlotDto(
-    DateTime Start,
-    DateTime End);
+    DateTime StartAt,
+    DateTime EndAt
+);
 
 public record SlotsResponse(
     DateTime Date,
     Guid TherapistId,
     Guid ServiceTypeId,
     int DurationMin,
-    List<SlotDto> Slots);
+    IEnumerable<SlotDto> Slots
+);

@@ -5,7 +5,8 @@ namespace MassageBooking.Application.Interfaces;
 
 public interface IClientService
 {
-    Task<Result<IEnumerable<ClientDto>>> ListAsync();
-    Task<Result<ClientDetailDto>> GetDetailAsync(Guid clientId);
-    Task<Result<IEnumerable<AppointmentDto>>> GetAppointmentsAsync(Guid clientId);
+    Task<Result<IEnumerable<ClientDto>>> GetAllAsync();
+    Task<Result<ClientDto>> GetByIdAsync(Guid id);
+    Task<Result<ClientDto>> UpdateAsync(Guid id, UpdateClientRequest request);
+    Task<Result<IEnumerable<AppointmentDto>>> GetAppointmentHistoryAsync(Guid clientId);
 }
