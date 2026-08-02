@@ -5,6 +5,7 @@ using MassageBooking.Domain.Common;
 using MassageBooking.Domain.Entities;
 using MassageBooking.Domain.Enums;
 using MassageBooking.Domain.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace MassageBooking.Application.Services;
 
@@ -12,11 +13,13 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IJwtService _jwtService;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(IUserRepository userRepository, IJwtService jwtService)
+    public AuthService(IUserRepository userRepository, IJwtService jwtService, IConfiguration configuration)
     {
         _userRepository = userRepository;
         _jwtService = jwtService;
+        _configuration = configuration;
     }
 
     public async Task<Result<UserDto>> RegisterAsync(RegisterRequest request)
@@ -62,6 +65,8 @@ public class AuthService : IAuthService
         var response = new LoginResponse(
             accessToken,
             refreshToken,
+            "Bearer",
+            int.Parse(_configuration["Jwt:Expiry"]!) * 60, // Convert minutes to seconds
             MapToDto(user));
 
         return Result<LoginResponse>.Success(response);
@@ -93,6 +98,8 @@ public class AuthService : IAuthService
         var response = new LoginResponse(
             accessToken,
             refreshToken,
+            "Bearer",
+            int.Parse(_configuration["Jwt:Expiry"]!) * 60,
             MapToDto(user));
 
         return Result<LoginResponse>.Success(response);
@@ -106,8 +113,10 @@ public class AuthService : IAuthService
             user.Phone,
             user.Name,
             user.Role,
+            user.PushToken,
             user.IsActive,
-            user.CreatedAt);
+            user.CreatedAt,
+            user.UpdatedAt);
     }
 
     public async Task<Result<UserDto>> GetByIdAsync(Guid userId)

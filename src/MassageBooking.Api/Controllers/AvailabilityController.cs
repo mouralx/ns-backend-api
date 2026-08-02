@@ -19,29 +19,38 @@ public class AvailabilityController : ControllerBase
     }
 
     [HttpGet("rules")]
-    public async Task<IActionResult> GetRules([FromQuery] Guid therapistId)
+    public async Task<IActionResult> GetRules([FromQuery] Guid? therapistId = null)
     {
-        var result = await _availabilityService.GetRulesAsync(therapistId);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.GetRulesAsync(id.Value);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AvailabilityRuleDto>>(result.Value));
     }
 
     [HttpPost("rules")]
     [Authorize(Policy = "TherapistOnly")]
-    public async Task<IActionResult> CreateRule([FromQuery] Guid therapistId, [FromBody] CreateRuleRequest request)
+    public async Task<IActionResult> CreateRule([FromQuery] Guid? therapistId = null, [FromBody] CreateRuleRequest request = null!)
     {
-        var result = await _availabilityService.CreateRuleAsync(therapistId, request);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.CreateRuleAsync(id.Value, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return CreatedAtAction(nameof(GetRules), new { therapistId }, result.Value);
+        return CreatedAtAction(nameof(GetRules), new { therapistId = id }, new ApiResponse<AvailabilityRuleDto>(result.Value));
     }
 
     [HttpPut("rules/{ruleId}")]
     [Authorize(Policy = "TherapistOnly")]
-    public async Task<IActionResult> UpdateRule(Guid ruleId, [FromQuery] Guid therapistId, [FromBody] UpdateRuleRequest request)
+    public async Task<IActionResult> UpdateRule(Guid ruleId, [FromQuery] Guid? therapistId = null, [FromBody] UpdateRuleRequest request = null!)
     {
-        var result = await _availabilityService.UpdateRuleAsync(therapistId, ruleId, request);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.UpdateRuleAsync(id.Value, ruleId, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AvailabilityRuleDto>(result.Value));
     }
 
     [HttpDelete("rules/{ruleId}")]
@@ -54,29 +63,38 @@ public class AvailabilityController : ControllerBase
     }
 
     [HttpGet("blocks")]
-    public async Task<IActionResult> GetBlocks([FromQuery] Guid therapistId)
+    public async Task<IActionResult> GetBlocks([FromQuery] Guid? therapistId = null)
     {
-        var result = await _availabilityService.GetBlocksAsync(therapistId);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.GetBlocksAsync(id.Value);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AvailabilityBlockDto>>(result.Value));
     }
 
     [HttpPost("blocks")]
     [Authorize(Policy = "TherapistOnly")]
-    public async Task<IActionResult> CreateBlock([FromQuery] Guid therapistId, [FromBody] CreateBlockRequest request)
+    public async Task<IActionResult> CreateBlock([FromQuery] Guid? therapistId = null, [FromBody] CreateBlockRequest request = null!)
     {
-        var result = await _availabilityService.CreateBlockAsync(therapistId, request);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.CreateBlockAsync(id.Value, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return CreatedAtAction(nameof(GetBlocks), new { therapistId }, result.Value);
+        return CreatedAtAction(nameof(GetBlocks), new { therapistId = id }, new ApiResponse<AvailabilityBlockDto>(result.Value));
     }
 
     [HttpPut("blocks/{blockId}")]
     [Authorize(Policy = "TherapistOnly")]
-    public async Task<IActionResult> UpdateBlock(Guid blockId, [FromQuery] Guid therapistId, [FromBody] UpdateBlockRequest request)
+    public async Task<IActionResult> UpdateBlock(Guid blockId, [FromQuery] Guid? therapistId = null, [FromBody] UpdateBlockRequest request = null!)
     {
-        var result = await _availabilityService.UpdateBlockAsync(therapistId, blockId, request);
+        var id = therapistId ?? GetUserId();
+        if (id == null) return BadRequest(new { error = "therapistId is required" });
+
+        var result = await _availabilityService.UpdateBlockAsync(id.Value, blockId, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AvailabilityBlockDto>(result.Value));
     }
 
     [HttpDelete("blocks/{blockId}")]
@@ -86,5 +104,11 @@ public class AvailabilityController : ControllerBase
         var result = await _availabilityService.DeleteBlockAsync(blockId);
         if (!result.IsSuccess) return BadRequest(result.Error);
         return NoContent();
+    }
+
+    private Guid? GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        return claim != null ? Guid.Parse(claim.Value) : null;
     }
 }

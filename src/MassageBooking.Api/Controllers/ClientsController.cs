@@ -22,7 +22,7 @@ public class ClientsController : ControllerBase
     {
         var result = await _clientService.GetAllAsync();
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<ClientDto>>(result.Value));
     }
 
     [HttpGet("{id}")]
@@ -30,7 +30,7 @@ public class ClientsController : ControllerBase
     {
         var result = await _clientService.GetByIdAsync(id);
         if (!result.IsSuccess) return NotFound(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<ClientDto>(result.Value));
     }
 
     [HttpPut("{id}")]
@@ -38,7 +38,7 @@ public class ClientsController : ControllerBase
     {
         var result = await _clientService.UpdateAsync(id, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<ClientDto>(result.Value));
     }
 
     [HttpGet("{id}/appointments")]
@@ -46,6 +46,6 @@ public class ClientsController : ControllerBase
     {
         var result = await _clientService.GetAppointmentHistoryAsync(id);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AppointmentDto>>(result.Value));
     }
 }

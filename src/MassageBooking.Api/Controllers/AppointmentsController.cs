@@ -23,7 +23,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetAllAsync();
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AppointmentDto>>(result.Value));
     }
 
     [HttpGet("{id}")]
@@ -31,7 +31,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetByIdAsync(id);
         if (!result.IsSuccess) return NotFound(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpPost]
@@ -42,7 +42,7 @@ public class AppointmentsController : ControllerBase
 
         var result = await _appointmentService.BookAsync(request, clientId.Value);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+        return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpPut("{id}")]
@@ -50,7 +50,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.UpdateAsync(id, request);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpDelete("{id}")]
@@ -59,7 +59,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.CancelAsync(id, reason ?? "Deleted by therapist");
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpPost("{id}/confirm")]
@@ -67,7 +67,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.ConfirmAsync(id);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpPost("{id}/cancel")]
@@ -75,7 +75,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.CancelAsync(id, request?.Reason);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<AppointmentDto>(result.Value));
     }
 
     [HttpGet("slots")]
@@ -86,7 +86,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetAvailableSlotsAsync(therapistId, serviceTypeId, date);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<SlotsResponse>(result.Value));
     }
 
     [HttpGet("upcoming")]
@@ -96,7 +96,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetUpcomingAsync(therapistId, limit);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AppointmentDto>>(result.Value));
     }
 
     [HttpGet("client/{clientId}")]
@@ -104,7 +104,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetByClientAsync(clientId);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AppointmentDto>>(result.Value));
     }
 
     [HttpGet("therapist/{therapistId}")]
@@ -113,7 +113,7 @@ public class AppointmentsController : ControllerBase
     {
         var result = await _appointmentService.GetByTherapistAsync(therapistId);
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<AppointmentDto>>(result.Value));
     }
 
     private Guid? GetUserId()

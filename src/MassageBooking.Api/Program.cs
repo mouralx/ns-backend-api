@@ -1,4 +1,6 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Hangfire;
 using Hangfire.PostgreSql;
 using MassageBooking.Api.Jobs;
@@ -21,7 +23,13 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger with JWT
@@ -44,10 +52,14 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5173",
-                "http://localhost:8081",
+                "http://localhost:5173",   // Backoffice (Vite dev)
+                "http://localhost:8080",   // Mobile Expo web
+                "http://localhost:8081",   // Mobile Expo (alt)
+                "http://localhost:19006",  // Expo Go
                 "https://localhost:5173",
-                "https://localhost:8081")
+                "https://localhost:8080",
+                "https://localhost:8081",
+                "https://localhost:19006")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

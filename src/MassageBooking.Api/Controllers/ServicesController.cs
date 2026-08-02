@@ -24,7 +24,7 @@ public class ServicesController : ControllerBase
         var dtos = services.Select(s => new ServiceTypeDto(
             s.Id, s.Name, s.DurationMin, s.Description, s.IsActive));
 
-        return Ok(dtos);
+        return Ok(new ApiResponse<IEnumerable<ServiceTypeDto>>(dtos));
     }
 
     [HttpGet("active")]
@@ -35,7 +35,7 @@ public class ServicesController : ControllerBase
         var dtos = services.Select(s => new ServiceTypeDto(
             s.Id, s.Name, s.DurationMin, s.Description, s.IsActive));
 
-        return Ok(dtos);
+        return Ok(new ApiResponse<IEnumerable<ServiceTypeDto>>(dtos));
     }
 
     [HttpGet("{id}")]
@@ -51,7 +51,7 @@ public class ServicesController : ControllerBase
         var dto = new ServiceTypeDto(
             service.Id, service.Name, service.DurationMin, service.Description, service.IsActive);
 
-        return Ok(dto);
+        return Ok(new ApiResponse<ServiceTypeDto>(dto));
     }
 
     [HttpPost]
@@ -71,7 +71,7 @@ public class ServicesController : ControllerBase
         var dto = new ServiceTypeDto(
             created.Id, created.Name, created.DurationMin, created.Description, created.IsActive);
 
-        return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+        return CreatedAtAction(nameof(GetById), new { id = dto.Id }, new ApiResponse<ServiceTypeDto>(dto));
     }
 
     [HttpPut("{id}")]
@@ -95,7 +95,7 @@ public class ServicesController : ControllerBase
         var dto = new ServiceTypeDto(
             updated.Id, updated.Name, updated.DurationMin, updated.Description, updated.IsActive);
 
-        return Ok(dto);
+        return Ok(new ApiResponse<ServiceTypeDto>(dto));
     }
 
     [HttpDelete("{id}")]

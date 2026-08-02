@@ -33,7 +33,7 @@ public class NotificationsController : ControllerBase
             return BadRequest(new { error = result.Error });
         }
 
-        return Ok(result.Value);
+        return Ok(new ApiResponse<IEnumerable<NotificationDto>>(result.Value));
     }
 
     [HttpGet("{id}")]
@@ -45,11 +45,35 @@ public class NotificationsController : ControllerBase
             return NotFound(new { error = result.Error });
         }
 
-        return Ok(result.Value);
+        return Ok(new ApiResponse<NotificationDto>(result.Value));
     }
 
+    /// <summary>
+    /// Mark individual notification as read. Matches frontend PUT /notifications/{id}/read.
+    /// </summary>
+    [HttpPut("{id}/read")]
+    public async Task<IActionResult> MarkAsRead(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _notificationService.MarkAsReadAsync(userId.Value, new MarkReadRequest(new[] { id }));
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(new { message = "Notification marked as read" });
+    }
+
+    /// <summary>
+    /// Batch mark notifications as read. Matches frontend POST /notifications/mark-read.
+    /// </summary>
     [HttpPost("mark-read")]
-    public async Task<IActionResult> MarkAsRead([FromBody] MarkReadRequest request)
+    public async Task<IActionResult> MarkAsReadBatch([FromBody] MarkReadRequest request)
     {
         var userId = GetUserId();
         if (userId == null)

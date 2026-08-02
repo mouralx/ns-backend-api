@@ -22,7 +22,7 @@ public class DashboardController : ControllerBase
     {
         var result = await _dashboardService.GetStatsAsync();
         if (!result.IsSuccess) return BadRequest(result.Error);
-        return Ok(result.Value);
+        return Ok(new ApiResponse<DashboardStatsDto>(result.Value));
     }
 
     [HttpGet("today")]

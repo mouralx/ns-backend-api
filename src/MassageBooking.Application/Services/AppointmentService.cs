@@ -307,9 +307,9 @@ public class AppointmentService : IAppointmentService
         return new AppointmentDto(
             appointment.Id,
             appointment.ClientId,
-            client != null ? new UserDto(client.Id, client.Email, client.Phone, client.Name, client.Role, client.IsActive, client.CreatedAt) : null!,
+            client != null ? new UserDto(client.Id, client.Email, client.Phone, client.Name, client.Role, client.PushToken, client.IsActive, client.CreatedAt, client.UpdatedAt) : null!,
             appointment.TherapistId,
-            therapist != null ? new UserDto(therapist.Id, therapist.Email, therapist.Phone, therapist.Name, therapist.Role, therapist.IsActive, therapist.CreatedAt) : null!,
+            therapist != null ? new UserDto(therapist.Id, therapist.Email, therapist.Phone, therapist.Name, therapist.Role, therapist.PushToken, therapist.IsActive, therapist.CreatedAt, therapist.UpdatedAt) : null!,
             appointment.ServiceTypeId,
             serviceType != null ? new ServiceTypeDto(serviceType.Id, serviceType.Name, serviceType.DurationMin, serviceType.Description, serviceType.IsActive) : null!,
             appointment.ScheduledAt,
