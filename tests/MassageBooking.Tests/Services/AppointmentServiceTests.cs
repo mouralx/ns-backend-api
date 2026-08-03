@@ -91,7 +91,7 @@ public class AppointmentServiceTests
             It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
             .ReturnsAsync(new List<Appointment>());
         _appointmentRepoMock.Setup(x => x.AddAsync(It.IsAny<Appointment>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new Appointment());
         _appointmentRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync((Guid id) => CreateTestAppointment(id));
 
@@ -162,7 +162,7 @@ public class AppointmentServiceTests
         _appointmentRepoMock.Setup(x => x.GetByIdAsync(appointmentId))
             .ReturnsAsync(appointment);
         _appointmentRepoMock.Setup(x => x.UpdateAsync(It.IsAny<Appointment>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new Appointment());
         _userRepoMock.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync(new User { Id = Guid.NewGuid(), PushToken = "token" });
 
