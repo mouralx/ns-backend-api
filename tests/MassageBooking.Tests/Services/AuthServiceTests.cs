@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using FluentAssertions;
 using MassageBooking.Application.DTOs;
 using MassageBooking.Application.Interfaces;
@@ -15,13 +16,15 @@ public class AuthServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IJwtService> _jwtServiceMock;
+    private readonly Mock<IConfiguration> _configMock;
     private readonly AuthService _sut;
 
     public AuthServiceTests()
     {
         _userRepoMock = new Mock<IUserRepository>();
         _jwtServiceMock = new Mock<IJwtService>();
-        _sut = new AuthService(_userRepoMock.Object, _jwtServiceMock.Object);
+        _configMock = new Mock<IConfiguration>();
+        _sut = new AuthService(_userRepoMock.Object, _jwtServiceMock.Object, _configMock.Object);
     }
 
     [Fact]
@@ -32,16 +35,15 @@ public class AuthServiceTests
         _userRepoMock.Setup(x => x.GetByEmailAsync(request.Email))
             .ReturnsAsync((User?)null);
         _userRepoMock.Setup(x => x.AddAsync(It.IsAny<User>()))
-            .Returns(Task.CompletedTask);
-        _jwtServiceMock.Setup(x => x.GenerateTokenAsync(It.IsAny<User>()))
-            .ReturnsAsync(new AuthTokens("access", "refresh", DateTime.UtcNow.AddDays(7)));
+            .ReturnsAsync(new User { Id = Guid.NewGuid() });
 
         // Act
         var result = await _sut.RegisterAsync(request);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccessToken.Should().Be("access");
+        result.Value.Should().NotBeNull();
+        result.Value!.Email.Should().Be("test@example.com");
     }
 
     [Fact]
@@ -74,14 +76,17 @@ public class AuthServiceTests
             IsActive = true
         };
         _userRepoMock.Setup(x => x.GetByEmailAsync(request.Email)).ReturnsAsync(user);
-        _jwtServiceMock.Setup(x => x.GenerateTokenAsync(user))
-            .ReturnsAsync(new AuthTokens("access", "refresh", DateTime.UtcNow.AddDays(7)));
+        _jwtServiceMock.Setup(x => x.GenerateAccessToken(user))
+            .Returns("access-token");
+        _jwtServiceMock.Setup(x => x.GenerateRefreshToken(user))
+            .Returns("refresh-token");
 
         // Act
         var result = await _sut.LoginAsync(request);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
+        result.Value!.AccessToken.Should().Be("access-token");
     }
 
     [Fact]
