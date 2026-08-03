@@ -83,7 +83,7 @@ start_manual() {
 
     echo -e "${YELLOW}Checking prerequisites...${NC}"
     check_tool docker "Install Docker: https://docs.docker.com/get-docker/"
-    check_tool dotnet ".NET 8 SDK required: https://dotnet.microsoft.com/download/dotnet/8.0"
+    check_tool dotnet ".NET 10 SDK required: https://dotnet.microsoft.com/download/dotnet/10.0"
     check_tool node "Install Node.js: https://nodejs.org"
     check_tool npm "Install Node.js: https://nodejs.org"
     echo -e "${GREEN}All prerequisites found.${NC}"
@@ -151,7 +151,7 @@ start_manual() {
     BO_DIR="$PARENT_DIR/ns-frontend-backoffice"
     echo -e "${CYAN}[3/4] Starting Backoffice on http://localhost:5173...${NC}"
     cd "$BO_DIR"
-    [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install; }
+    [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install --legacy-peer-deps; }
     export VITE_API_URL="http://localhost:5000"
     npm run dev &
     BO_PID=$!
@@ -162,7 +162,7 @@ start_manual() {
     MOBILE_DIR="$PARENT_DIR/ns-frontend-mobile"
     echo -e "${CYAN}[4/4] Starting Mobile App on http://localhost:8080...${NC}"
     cd "$MOBILE_DIR"
-    [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install; }
+    [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install --legacy-peer-deps; }
     export EXPO_PUBLIC_API_URL="http://localhost:5000"
     npx expo start --web &
     MOBILE_PID=$!
