@@ -6,7 +6,7 @@ PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [ "$1" = "--stop" ]; then
     echo "Stopping all containers..."
-    cd "$SCRIPT_DIR" && docker compose down
+    cd "$SCRIPT_DIR" && podman compose down
     echo "All containers stopped."
     exit 0
 fi
@@ -17,8 +17,8 @@ fi
 
 echo "=== Massage Booking — Containerized Setup ==="
 
-if ! docker info > /dev/null 2>&1; then
-    echo "Error: Docker is not running."
+if ! podman info > /dev/null 2>&1; then
+    echo "Error: Podman is not running."
     exit 1
 fi
 
@@ -36,12 +36,12 @@ done
 
 # Build and start
 echo "Building and starting all containers..."
-cd "$SCRIPT_DIR" && docker compose up --build -d
+cd "$SCRIPT_DIR" && podman compose up --build -d
 
 # Wait for API
 echo "Waiting for API..."
 for i in $(seq 1 60); do
-    if docker compose exec -T api curl -s http://localhost:8080/health > /dev/null 2>&1; then
+    if podman compose exec -T api curl -s http://localhost:8080/health > /dev/null 2>&1; then
         echo "API is ready."
         break
     fi

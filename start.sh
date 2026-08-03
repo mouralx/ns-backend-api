@@ -4,8 +4,8 @@
 # ============================================================
 # Usage:
 #   ./start.sh          Start everything (manual mode)
-#   ./start.sh --docker Start via Docker Compose
-#   ./start.sh --stop   Stop Docker Compose services
+#   ./start.sh --docker Start via Podman Compose
+#   ./start.sh --stop   Stop Podman Compose services
 #   ./start.sh --help   Show help
 # ============================================================
 
@@ -23,38 +23,38 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --docker    Start all services via Docker Compose"
+    echo "  --docker    Start all services via Podman Compose"
     echo "  --manual    Start services manually (default)"
-    echo "  --stop      Stop Docker Compose services"
+    echo "  --stop      Stop Podman Compose services"
     echo "  --help      Show this help"
     echo ""
     echo "Manual mode starts:"
-    echo "  1. PostgreSQL + Redis via Docker"
+    echo "  1. PostgreSQL + Redis via Podman"
     echo "  2. Backend API via dotnet run"
     echo "  3. Backoffice via npm run dev"
     echo "  4. Mobile via npx expo start --web"
     echo ""
-    echo "Docker mode starts everything in containers."
+    echo "Podman mode starts everything in containers."
     exit 0
 }
 
 stop_docker() {
-    echo -e "${YELLOW}Stopping Docker Compose services...${NC}"
+    echo -e "${YELLOW}Stopping Podman Compose services...${NC}"
     cd "$SCRIPT_DIR"
-    docker compose down
+    podman compose down
     echo -e "${GREEN}All services stopped.${NC}"
 }
 
 start_docker() {
-    echo -e "${CYAN}Starting all services via Docker Compose...${NC}"
+    echo -e "${CYAN}Starting all services via Podman Compose...${NC}"
     cd "$SCRIPT_DIR"
 
-    if ! docker info > /dev/null 2>&1; then
-        echo -e "${RED}Docker is not running. Please start Docker Desktop.${NC}"
+    if ! podman info > /dev/null 2>&1; then
+        echo -e "${RED}Podman is not running. Please start Podman Machine.${NC}"
         exit 1
     fi
 
-    docker compose up --build
+    podman compose up --build
 }
 
 check_tool() {
@@ -82,7 +82,7 @@ start_manual() {
     echo ""
 
     echo -e "${YELLOW}Checking prerequisites...${NC}"
-    check_tool docker "Install Docker: https://docs.docker.com/get-docker/"
+    check_tool podman "Install Podman: https://podman.io/getting-started/installation"
     check_tool dotnet ".NET 10 SDK required: https://dotnet.microsoft.com/download/dotnet/10.0"
     check_tool node "Install Node.js: https://nodejs.org"
     check_tool npm "Install Node.js: https://nodejs.org"
@@ -97,11 +97,11 @@ start_manual() {
     # 1. Start PostgreSQL and Redis
     echo -e "${CYAN}[1/4] Starting PostgreSQL and Redis...${NC}"
     cd "$SCRIPT_DIR"
-    docker compose up -d postgres redis
+    podman compose up -d postgres redis
 
     echo "Waiting for PostgreSQL..."
     for i in $(seq 1 30); do
-        if docker compose exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
+        if podman compose exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
             echo -e "${GREEN}PostgreSQL is ready.${NC}"
             break
         fi
@@ -111,7 +111,7 @@ start_manual() {
 
     echo "Waiting for Redis..."
     for i in $(seq 1 15); do
-        if docker compose exec -T redis redis-cli ping > /dev/null 2>&1; then
+        if podman compose exec -T redis redis-cli ping > /dev/null 2>&1; then
             echo -e "${GREEN}Redis is ready.${NC}"
             break
         fi
@@ -188,7 +188,7 @@ start_manual() {
         echo -e "${YELLOW}Stopping services...${NC}"
         kill $API_PID $BO_PID $MOBILE_PID 2>/dev/null || true
         cd "$SCRIPT_DIR"
-        docker compose stop postgres redis
+        podman compose stop postgres redis
         echo -e "${GREEN}All services stopped.${NC}"
     }
     trap cleanup EXIT INT TERM
