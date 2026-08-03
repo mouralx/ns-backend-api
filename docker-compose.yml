@@ -17,8 +17,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
     restart: unless-stopped
 
   postgres:
@@ -50,26 +48,28 @@ services:
       timeout: 5s
       retries: 5
 
-  hangfire:
-    build: .
-    command: ["dotnet", "MassageBooking.Api.dll", "--hangfire"]
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=massage_booking;Username=postgres;Password=postgres
-      - ConnectionStrings__Redis=redis:6379
-      - ConnectionStrings__Hangfire=Host=postgres;Port=5432;Database=massage_booking;Username=postgres;Password=postgres
-      - Jwt__Key=YourSuperSecretKeyThatIsAtLeast32CharactersLong!
-      - Jwt__Issuer=MassageBookingApi
-      - Jwt__Audience=MassageBookingApp
-      - Jwt__Expiry=60
+  backoffice:
+    build:
+      context: ../ns-frontend-backoffice
+      dockerfile: ../ns-backend-api/docker/Dockerfile.backoffice
+    ports:
+      - "5173:80"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  mobile:
+    build:
+      context: ../ns-frontend-mobile
+      dockerfile: ../ns-backend-api/docker/Dockerfile.mobile
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
   postgres_data:
-      - ./pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf:ro
   redis_data:
