@@ -12,6 +12,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -64,16 +65,33 @@ check_tool() {
     fi
 }
 
+clone_if_missing() {
+    local dir="$1"
+    local repo="$2"
+    local dest="$PARENT_DIR/$dir"
+    if [ ! -d "$dest" ]; then
+        echo -e "${YELLOW}Cloning $dir...${NC}"
+        git clone "https://github.com/mouralx/$repo.git" "$dest"
+    else
+        echo -e "${GREEN}$dir already exists.${NC}"
+    fi
+}
+
 start_manual() {
     echo -e "${CYAN}Starting services manually...${NC}"
     echo ""
 
     echo -e "${YELLOW}Checking prerequisites...${NC}"
     check_tool docker "Install Docker: https://docs.docker.com/get-docker/"
-    check_tool dotnet "Install .NET SDK: https://dotnet.microsoft.com/download/dotnet/8.0"
+    check_tool dotnet ".NET 8 SDK required: https://dotnet.microsoft.com/download/dotnet/8.0"
     check_tool node "Install Node.js: https://nodejs.org"
     check_tool npm "Install Node.js: https://nodejs.org"
     echo -e "${GREEN}All prerequisites found.${NC}"
+    echo ""
+
+    echo -e "${YELLOW}Checking frontend repos...${NC}"
+    clone_if_missing "ns-frontend-backoffice" "ns-frontend-backoffice"
+    clone_if_missing "ns-frontend-mobile" "ns-frontend-mobile"
     echo ""
 
     # 1. Start PostgreSQL and Redis
@@ -104,7 +122,7 @@ start_manual() {
 
     # 2. Start Backend API
     echo -e "${CYAN}[2/4] Starting Backend API on http://localhost:5000...${NC}"
-    cd "$SCRIPT_DIR/ns-backend-api/src/MassageBooking.Api"
+    cd "$SCRIPT_DIR/src/MassageBooking.Api"
     export ASPNETCORE_ENVIRONMENT=Development
     export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=massage_booking;Username=postgres;Password=postgres"
     export ConnectionStrings__Redis="localhost:6379"
@@ -130,8 +148,9 @@ start_manual() {
     echo ""
 
     # 3. Start Backoffice
+    BO_DIR="$PARENT_DIR/ns-frontend-backoffice"
     echo -e "${CYAN}[3/4] Starting Backoffice on http://localhost:5173...${NC}"
-    cd "$SCRIPT_DIR/ns-frontend-backoffice"
+    cd "$BO_DIR"
     [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install; }
     export VITE_API_URL="http://localhost:5000"
     npm run dev &
@@ -140,8 +159,9 @@ start_manual() {
     echo ""
 
     # 4. Start Mobile
+    MOBILE_DIR="$PARENT_DIR/ns-frontend-mobile"
     echo -e "${CYAN}[4/4] Starting Mobile App on http://localhost:8080...${NC}"
-    cd "$SCRIPT_DIR/ns-frontend-mobile"
+    cd "$MOBILE_DIR"
     [ ! -d "node_modules" ] && { echo "Installing dependencies..."; npm install; }
     export EXPO_PUBLIC_API_URL="http://localhost:5000"
     npx expo start --web &
