@@ -10,7 +10,8 @@ public record NotificationDto(
     DateTime? SentAt,
     DateTime? ReadAt,
     Guid? AppointmentId,
-    string ErrorMessage
+    string ErrorMessage,
+    DateTime CreatedAt
 );
 
 public record MarkReadRequest(

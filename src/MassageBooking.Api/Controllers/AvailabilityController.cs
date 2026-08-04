@@ -12,10 +12,12 @@ namespace MassageBooking.Api.Controllers;
 public class AvailabilityController : ControllerBase
 {
     private readonly IAvailabilityService _availabilityService;
+    private readonly IAuthService _authService;
 
-    public AvailabilityController(IAvailabilityService availabilityService)
+    public AvailabilityController(IAvailabilityService availabilityService, IAuthService authService)
     {
         _availabilityService = availabilityService;
+        _authService = authService;
     }
 
     [HttpGet("rules")]
@@ -36,8 +38,14 @@ public class AvailabilityController : ControllerBase
         var id = therapistId ?? GetUserId();
         if (id == null) return BadRequest(new { error = "therapistId is required" });
 
+        var user = await _authService.GetByIdAsync(id.Value);
+        if (!user.IsSuccess)
+        {
+            return Unauthorized(new { error = "Session is no longer valid. Please sign in again." });
+        }
+
         var result = await _availabilityService.CreateRuleAsync(id.Value, request);
-        if (!result.IsSuccess) return BadRequest(result.Error);
+        if (!result.IsSuccess) return BadRequest(new { error = result.Error });
         return CreatedAtAction(nameof(GetRules), new { therapistId = id }, new ApiResponse<AvailabilityRuleDto>(result.Value));
     }
 
@@ -57,8 +65,11 @@ public class AvailabilityController : ControllerBase
     [Authorize(Policy = "TherapistOnly")]
     public async Task<IActionResult> DeleteRule(Guid ruleId)
     {
-        var result = await _availabilityService.DeleteRuleAsync(ruleId);
-        if (!result.IsSuccess) return BadRequest(result.Error);
+        var therapistId = GetUserId();
+        if (therapistId == null) return Unauthorized();
+
+        var result = await _availabilityService.DeleteRuleAsync(therapistId.Value, ruleId);
+        if (!result.IsSuccess) return NotFound(new { error = result.Error });
         return NoContent();
     }
 

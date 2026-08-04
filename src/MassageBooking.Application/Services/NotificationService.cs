@@ -34,7 +34,8 @@ public class NotificationService : INotificationService
             n.SentAt,
             n.ReadAt,
             n.AppointmentId,
-            n.ErrorMessage ?? "")).ToList();
+            n.ErrorMessage ?? "",
+            n.CreatedAt)).ToList();
 
         return Result<IEnumerable<NotificationDto>>.Success(dtos);
     }
@@ -72,7 +73,8 @@ public class NotificationService : INotificationService
             notification.SentAt,
             notification.ReadAt,
             notification.AppointmentId,
-            notification.ErrorMessage ?? "");
+            notification.ErrorMessage ?? "",
+            notification.CreatedAt);
 
         return Result<NotificationDto>.Success(dto);
     }

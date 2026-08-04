@@ -32,6 +32,25 @@ public class AvailabilityService : IAvailabilityService
 
     public async Task<Result<AvailabilityRuleDto>> CreateRuleAsync(Guid therapistId, CreateRuleRequest request)
     {
+        if (request.DayOfWeek is < 0 or > 6)
+        {
+            return Result<AvailabilityRuleDto>.Failure("Day of week must be between 0 and 6");
+        }
+        if (request.StartTime >= request.EndTime)
+        {
+            return Result<AvailabilityRuleDto>.Failure("End time must be later than start time");
+        }
+
+        var dayRules = await _availabilityRepository.GetRulesAsync(therapistId, request.DayOfWeek);
+        var overlaps = dayRules.Any(existing =>
+            existing.IsActive &&
+            request.StartTime < existing.EndTime &&
+            request.EndTime > existing.StartTime);
+        if (overlaps)
+        {
+            return Result<AvailabilityRuleDto>.Failure("Working hours overlap an existing rule for this day");
+        }
+
         var rule = new AvailabilityRule
         {
             TherapistId = therapistId,
@@ -78,8 +97,14 @@ public class AvailabilityService : IAvailabilityService
         return Result<AvailabilityRuleDto>.Success(dto);
     }
 
-    public async Task<Result> DeleteRuleAsync(Guid ruleId)
+    public async Task<Result> DeleteRuleAsync(Guid therapistId, Guid ruleId)
     {
+        var rule = await _availabilityRepository.GetRuleByIdAsync(ruleId);
+        if (rule == null || rule.TherapistId != therapistId)
+        {
+            return Result.Failure("Rule not found");
+        }
+
         await _availabilityRepository.RemoveRuleAsync(ruleId);
         return Result.Success();
     }
